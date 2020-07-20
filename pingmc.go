@@ -123,13 +123,15 @@ func update(channelID, ip, channelName string, s *discordgo.Session) error {
 	conn, err := net.Dial("tcp", ip)
 	if err == nil {
 		data := ping(conn)
-		_, err = s.ChannelEdit(channelID, (channelName + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max)))
+		_, err = s.ChannelEdit(channelID, (channelName + " " + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max)))
 		if err != nil {
 			conn.Close()
 		}
 		return err //we must notify the calling function as well
 	}
-	conn.Close()
+	if conn != nil {
+		conn.Close()
+	}
 	return err
 }
 
