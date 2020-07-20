@@ -29,7 +29,8 @@ func main() {
 
 	discord, err := discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("fucking hell")
+		fmt.Println("Unable to create bot with the given token.")
+		fmt.Println(err)
 		return
 	}
 
@@ -38,6 +39,7 @@ func main() {
 	discord.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
 	err = discord.Open()
 	if err != nil {
+		fmt.Println("Unable to open a connection to discord")
 		fmt.Println(err)
 	}
 
@@ -121,7 +123,7 @@ func update(channelID, ip, channelName string, s *discordgo.Session) error {
 	conn, err := net.Dial("tcp", ip)
 	if err == nil {
 		data := ping(conn)
-		_, err = s.ChannelEdit(channelID, ("Playing: " + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max)))
+		_, err = s.ChannelEdit(channelID, (channelName + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max)))
 		if err != nil {
 			conn.Close()
 		}
@@ -224,7 +226,8 @@ func recieveResponse(conn net.Conn) pingData {
 	if readCount == length && err == nil {
 		return data
 	}
-	fmt.Println("uh oh")
+	fmt.Println("Error recieving response from server.")
+	fmt.Println(err)
 	return data
 }
 
@@ -241,12 +244,12 @@ func readVarInt(conn net.Conn) int {
 			numRead++
 
 			if numRead > 5 {
-				fmt.Println("shit")
+				fmt.Println("VarInt from server is too large!")
 			}
 
 		} else {
+			fmt.Println("Error receiving VarInt from server.")
 			fmt.Println(err)
-			fmt.Println("crap")
 		}
 	}
 
@@ -267,7 +270,8 @@ func readString(conn net.Conn) string {
 		return string(readBuf)
 	}
 
-	fmt.Println("fuck")
+	fmt.Println("Error recieving string from server")
+	fmt.Println(err)
 	return ""
 }
 
