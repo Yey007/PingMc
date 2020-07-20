@@ -83,6 +83,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 						for true {
 							err := update(ch.ID, args[3], args[2], s)
 							if err != nil {
+								fmt.Println(err)
 								stopString := "Stopped pinging `" + temp[0] + "`"
 								if len(temp) == 2 {
 									stopString += " on `" + temp[1] + "`"
