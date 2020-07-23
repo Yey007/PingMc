@@ -80,6 +80,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 					s.ChannelMessageSend(m.ChannelID, pingString)
 					if err == nil {
+
+						sleepTime, err := strconv.Atoi(args[4])
+						if err != nil {
+							sleepTime = 30
+						}
+						if sleepTime < 30 {
+							s.ChannelMessageSend(m.ChannelID, "```Min sleep time is 30 seconds in order to \n"+
+								"avoid hitting rate limits\n"+
+								"and leave space for error and help messages."+
+								"Sleep time has been set to 30 seconds.```")
+							sleepTime = 30
+						}
+
 						for true {
 							err := update(ch.ID, args[3], args[2], s)
 							if err != nil {
@@ -91,10 +104,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 								s.ChannelMessageSend(m.ChannelID, stopString)
 								return
 							}
-							sleepTime, err := strconv.Atoi(args[4])
-							if err != nil {
-								sleepTime = 20
-							}
+							fmt.Println("Hello!")
 							time.Sleep(time.Duration(sleepTime) * time.Second)
 						}
 					}
@@ -124,13 +134,18 @@ func update(channelID, ip, channelName string, s *discordgo.Session) error {
 	conn, err := net.Dial("tcp", ip)
 	if err == nil {
 		data := ping(conn)
+		fmt.Println("Ping!")
+		fmt.Println(data)
 		_, err = s.ChannelEdit(channelID, (channelName + " " + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max)))
+		fmt.Println("Channel edit complete")
 		if err != nil {
+			fmt.Println(err)
 			conn.Close()
 		}
-		return err //we must notify the calling function as well
+		return err
 	}
 	if conn != nil {
+		fmt.Println(err)
 		conn.Close()
 	}
 	return err
