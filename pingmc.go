@@ -1,19 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/andersfylling/disgord"
 )
 
 var (
@@ -27,128 +25,78 @@ func init() {
 
 func main() {
 
-	discord, err := discordgo.New("Bot " + token)
-	if err != nil {
+	client := disgord.New(disgord.Config{
+		BotToken: token,
+	})
+
+	if client == nil {
 		fmt.Println("Unable to create bot with the given token.")
-		fmt.Println(err)
 		return
 	}
+	fmt.Println("PingMC v0.1 running", client)
 
-	discord.AddHandler(messageCreate)
+	defer client.StayConnectedUntilInterrupted(context.Background())
 
-	discord.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
-	err = discord.Open()
-	if err != nil {
-		fmt.Println("Unable to open a connection to discord")
-		fmt.Println(err)
-	}
+	client.On(disgord.EvtMessageCreate, onMessageCreate)
 
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
-	<-sc
-
-	// Cleanly close down the Discord session.
-	discord.Close()
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func onMessageCreate(session disgord.Session, evt *disgord.MessageCreate) {
+	con := context.Background()
+	msg := evt.Message
+	args := strings.Split(msg.Content, " ")
 
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	args := strings.Split(m.Content, " ")
-	length := len(args)
-	usage := "```Usage:\n" +
-		".pingmc help - displays this message \n" +
-		".pingmc start channelName IP secondsBetweenPings - starts pinging an ip for player counts\n" +
-		"There is no stop command, just delete the channel.```"
-
-	//base command
-	if args[0] == ".pingmc" {
-		if length >= 2 {
-			if args[1] == "start" {
-				if length == 5 {
-
-					ch, err := s.GuildChannelCreate(m.GuildID, args[2]+" 0/0", discordgo.ChannelTypeGuildVoice)
-					temp := strings.Split(args[3], ":")
-					pingString := "Started pinging `" + temp[0] + "`"
-					if len(temp) == 2 {
-						pingString += " on `" + temp[1] + "`"
-					}
-					s.ChannelMessageSend(m.ChannelID, pingString)
-					if err == nil {
-
-						sleepTime, err := strconv.Atoi(args[4])
-						if err != nil {
-							sleepTime = 30
-						}
-						if sleepTime < 30 {
-							s.ChannelMessageSend(m.ChannelID, "```Min sleep time is 30 seconds in order to \n"+
-								"avoid hitting rate limits\n"+
-								"and leave space for error and help messages."+
-								"Sleep time has been set to 30 seconds.```")
-							sleepTime = 30
-						}
-
-						for true {
-							err := update(ch.ID, args[3], args[2], s)
-							if err != nil {
-								fmt.Println(err)
-								stopString := "Stopped pinging `" + temp[0] + "`"
-								if len(temp) == 2 {
-									stopString += " on `" + temp[1] + "`"
-								}
-								s.ChannelMessageSend(m.ChannelID, stopString)
-								return
-							}
-							fmt.Println("Hello!")
-							time.Sleep(time.Duration(sleepTime) * time.Second)
-						}
-					}
-
-				} else {
-					//wrong number of arguments - display usage
-					s.ChannelMessageSend(m.ChannelID, "Wrong number of arguments!")
-					s.ChannelMessageSend(m.ChannelID, usage)
-				}
-			} else if args[1] == "help" {
-				//display usage
-				s.ChannelMessageSend(m.ChannelID, usage)
-			} else {
-				//non existent sub command - display usage
-				s.ChannelMessageSend(m.ChannelID, "That command does not exist!")
-				s.ChannelMessageSend(m.ChannelID, usage)
-			}
+	if len(args) >= 2 && args[0] == ".pingmc" {
+		if len(args) == 4 && args[1] == "ping" {
+			go onPingRequest(con, session, msg, args)
 		} else {
-			//not enough arguments
-			s.ChannelMessageSend(m.ChannelID, "Wrong number of arguments!")
-			s.ChannelMessageSend(m.ChannelID, usage)
+			go showUsage(con, session, msg)
 		}
 	}
 }
 
-func update(channelID, ip, channelName string, s *discordgo.Session) error {
-	conn, err := net.Dial("tcp", ip)
+func onPingRequest(con context.Context, session disgord.Session, msg *disgord.Message, args []string) {
+	/*
+		guild, _ := session.GetGuild(con, msg.GuildID)
+		roles, _ := guild.RoleByName("@everyone")
+		permissions := disgord.PermissionOverwrite{ID: roles[0].ID, Type: "role", Deny: disgord.PermissionVoiceConnect}
+		params := disgord.CreateGuildChannelParams{Type: disgord.ChannelTypeGuildVoice, PermissionOverwrites: []disgord.PermissionOverwrite{permissions}}
+		channel, err := session.CreateGuildChannel(con, msg.GuildID, args[2], &params)
+	*/
+	guild, _ := session.GetGuild(con, msg.GuildID)
+	roles, _ := guild.RoleByName("@everyone")
+	permissions := disgord.PermissionOverwrite{ID: roles[0].ID, Type: "role", Deny: disgord.PermissionSendMessages}
+	params := disgord.CreateGuildChannelParams{Type: disgord.ChannelTypeGuildText, PermissionOverwrites: []disgord.PermissionOverwrite{permissions}}
+	channel, err := session.CreateGuildChannel(con, msg.GuildID, args[2], &params)
+
 	if err == nil {
-		data := ping(conn)
-		fmt.Println("Ping!")
-		fmt.Println(data)
-		_, err = s.ChannelEdit(channelID, (channelName + " " + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max)))
-		fmt.Println("Channel edit complete")
-		if err != nil {
-			fmt.Println(err)
-			conn.Close()
+		msg.Reply(con, session, "Started listening on `"+args[3]+"`")
+		var lastData pingData
+		for {
+			time.Sleep(5 * time.Second)
+			conn, err := net.Dial("tcp", args[3])
+			if err == nil {
+				data := ping(conn)
+				datastring := "(" + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max) + ")"
+				if data.Play.Online > lastData.Play.Online {
+					embed := disgord.Embed{Title: "Join " + datastring, Color: 0x00ad37, Description: "Someone entered the Minecraft server"}
+					session.SendMsg(con, channel.ID, embed)
+				} else if data.Play.Online < lastData.Play.Online {
+					embed := disgord.Embed{Title: "Join " + datastring, Color: 0xb00000, Description: "Someone left the Minecraft server"}
+					session.SendMsg(con, channel.ID, embed)
+				}
+
+				lastData = data
+			}
 		}
-		return err
 	}
-	if conn != nil {
-		fmt.Println(err)
-		conn.Close()
-	}
-	return err
+}
+
+func showUsage(con context.Context, session disgord.Session, msg *disgord.Message) {
+	msg.Reply(con, session, "```Usage: \n"+
+		".pingmc help - displays this message \n"+
+		".pingmc ping channelName IP```")
 }
 
 type pingData struct {
