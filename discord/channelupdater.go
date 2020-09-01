@@ -11,7 +11,7 @@ import (
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/snowflake/v4"
 	"yey007.github.io/software/pingmc/networking"
-	"yey007.github.io/software/pingmc/networking/forge"
+	"yey007.github.io/software/pingmc/networking/fml1"
 	"yey007.github.io/software/pingmc/networking/vanilla"
 )
 
@@ -34,7 +34,7 @@ func onPingRequest(info sessionInfo, guildID snowflake.Snowflake, channelID snow
 
 	datastring := "(0/0)"
 	var pingTime time.Duration = 5
-	wasOffline := false
+	wasOffline := true
 
 	online := func() error {
 		embed := disgord.Embed{Title: "Online " + datastring, Color: 0x00ad37,
@@ -58,7 +58,7 @@ func onPingRequest(info sessionInfo, guildID snowflake.Snowflake, channelID snow
 	}
 
 	offline := func() error {
-		pingTime = 40
+		pingTime = 5
 		if !wasOffline {
 			embed := disgord.Embed{Title: "Offline", Color: 0xb00000,
 				Description: "The Minecraft server may be offline"}
@@ -83,7 +83,7 @@ func onPingRequest(info sessionInfo, guildID snowflake.Snowflake, channelID snow
 
 				if err == nil {
 
-					datastring = "(" + strconv.Itoa(data.Play.Online) + "/" + strconv.Itoa(data.Play.Max) + ")"
+					datastring = "(" + strconv.Itoa(data.Players.Online) + "/" + strconv.Itoa(data.Players.Max) + ")"
 					if wasOffline {
 						if online() != nil {
 							return
@@ -93,11 +93,11 @@ func onPingRequest(info sessionInfo, guildID snowflake.Snowflake, channelID snow
 					wasOffline = false
 					pingTime = 5
 
-					if data.Play.Online > lastData.Play.Online {
+					if data.Players.Online > lastData.Players.Online {
 						if join() != nil {
 							return
 						}
-					} else if data.Play.Online < lastData.Play.Online {
+					} else if data.Players.Online < lastData.Players.Online {
 						if leave() != nil {
 							return
 						}
@@ -105,11 +105,13 @@ func onPingRequest(info sessionInfo, guildID snowflake.Snowflake, channelID snow
 					lastData = data
 
 				} else {
+					fmt.Println(err)
 					if offline() != nil {
 						return
 					}
 				}
 			} else {
+				fmt.Println(err)
 				if offline() != nil {
 					return
 				}
@@ -137,7 +139,7 @@ func validateInputs(info sessionInfo, channelID snowflake.Snowflake, args []stri
 		showError(info, channelID, "Invalid IP address")
 	}
 
-	if serverType != "vanilla" && serverType != "forge" {
+	if serverType != "vanilla" && serverType != "forge1" {
 		fmt.Println(serverType)
 		result = result && false
 		showError(info, channelID, "Invalid server type")
@@ -172,8 +174,8 @@ func createPingChannel(info sessionInfo, guildID snowflake.Snowflake, channelNam
 func createServer(info sessionInfo, serverType string) (networking.McServer, error) {
 	if serverType == "vanilla" {
 		return new(vanilla.Server), nil
-	} else if serverType == "forge" {
-		return new(forge.Server), nil
+	} else if serverType == "forge1" {
+		return new(fml1.Server), nil
 	}
 	return nil, errors.New("Incorrect server type")
 }
