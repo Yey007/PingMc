@@ -1,4 +1,4 @@
-package bukkit
+package vanilla
 
 import (
 	"encoding/json"
