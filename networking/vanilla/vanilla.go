@@ -13,8 +13,8 @@ type Server struct {
 //Ping pings a vanilla server for player data
 func (s *Server) Ping(conn net.Conn) (networking.PingData, error) {
 
-	err := sendHandshake(conn)
-	err = sendRequest(conn)
+	err := networking.SendHandshake(conn)
+	err = networking.SendRequest(conn)
 	response, err := recieveResponse(conn)
 	return response, err
 }
