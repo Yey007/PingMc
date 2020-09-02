@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
-	"strconv"
-	"strings"
 )
 
 //ReadVarInt reads a variable length integer from the given connection
@@ -93,53 +91,7 @@ func WriteShort(short uint16, data []byte) []byte {
 	return data
 }
 
-func SendHandshake(conn net.Conn) error {
-
-	data := make([]byte, 0)
-	packetID := 0x00
-	protocolVersion := 736
-
-	temp := strings.Split(conn.RemoteAddr().String(), ":")
-
-	serverAddress := temp[0] + "\000FML\000"
-	var serverPort uint16
-
-	if len(temp) == 2 {
-		var err error
-		var i int
-		i, err = strconv.Atoi(temp[1])
-		if err != nil {
-			serverPort = 25565
-		} else {
-			serverPort = uint16(i)
-		}
-	} else {
-		serverPort = 25565
-	}
-
-	nextState := 1
-
-	data = WriteVarInt(packetID, data)
-	data = WriteVarInt(protocolVersion, data)
-	data = WriteString(serverAddress, data)
-	data = WriteShort(serverPort, data)
-	data = WriteVarInt(nextState, data)
-
-	length := len(data)
-	lengthData := make([]byte, 0)
-	lengthData = WriteVarInt(length, lengthData)
-
-	_, err := conn.Write(lengthData)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	_, err = conn.Write(data)
-	fmt.Println(err)
-	return err
-}
-
+//SendRequest sends an Server List Ping request packet to a server
 func SendRequest(conn net.Conn) error {
 	data := make([]byte, 0)
 	packetID := 0x00

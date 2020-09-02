@@ -2,7 +2,6 @@ package discord
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -36,37 +35,32 @@ func onPingRequest(info sessionInfo, guildID snowflake.Snowflake, channelID snow
 	var pingTime time.Duration = 5
 	wasOffline := true
 
-	online := func() error {
+	online := func() {
 		embed := disgord.Embed{Title: "Online " + datastring, Color: 0x00ad37,
 			Description: "The Minecraft server came online"}
-		_, err := info.session.SendMsg(info.con, pingChannel.ID, embed)
-		return err
+		info.session.SendMsg(info.con, pingChannel.ID, embed)
 	}
 
-	join := func() error {
+	join := func() {
 		embed := disgord.Embed{Title: "Join " + datastring, Color: 0x1a5fba,
 			Description: "Someone entered the Minecraft server"}
-		_, err := info.session.SendMsg(info.con, pingChannel.ID, embed)
-		return err
+		info.session.SendMsg(info.con, pingChannel.ID, embed)
 	}
 
-	leave := func() error {
+	leave := func() {
 		embed := disgord.Embed{Title: "Leave " + datastring, Color: 0xe8bb35,
 			Description: "Someone left the Minecraft server"}
-		_, err := info.session.SendMsg(info.con, pingChannel.ID, embed)
-		return err
+		info.session.SendMsg(info.con, pingChannel.ID, embed)
 	}
 
-	offline := func() error {
+	offline := func() {
 		pingTime = 5
 		if !wasOffline {
 			embed := disgord.Embed{Title: "Offline", Color: 0xb00000,
 				Description: "The Minecraft server may be offline"}
 			wasOffline = true
-			_, err := info.session.SendMsg(info.con, pingChannel.ID, embed)
-			return err
+			info.session.SendMsg(info.con, pingChannel.ID, embed)
 		}
-		return nil
 	}
 
 	if err == nil {
@@ -83,40 +77,34 @@ func onPingRequest(info sessionInfo, guildID snowflake.Snowflake, channelID snow
 
 				if err == nil {
 
-					datastring = "(" + strconv.Itoa(data.Players.Online) + "/" + strconv.Itoa(data.Players.Max) + ")"
-					if wasOffline {
-						if online() != nil {
-							return
-						}
+					//check if channel is alive
+					_, err := info.session.GetChannel(info.con, pingChannel.ID)
+					if err != nil {
+						return
 					}
 
-					wasOffline = false
-					pingTime = 5
+					datastring = "(" + strconv.Itoa(data.Players.Online) + "/" + strconv.Itoa(data.Players.Max) + ")"
+					if wasOffline {
+						online()
+						wasOffline = false
+						pingTime = 5
+						lastData = data
+						continue
+					}
 
 					if data.Players.Online > lastData.Players.Online {
-						if join() != nil {
-							return
-						}
+						join()
 					} else if data.Players.Online < lastData.Players.Online {
-						if leave() != nil {
-							return
-						}
+						leave()
 					}
 					lastData = data
 
 				} else {
-					fmt.Println(err)
-					if offline() != nil {
-						return
-					}
+					offline()
 				}
 			} else {
-				fmt.Println(err)
-				if offline() != nil {
-					return
-				}
+				offline()
 			}
-			fmt.Println("ping")
 			time.Sleep(pingTime * time.Second)
 		}
 	}
@@ -140,7 +128,6 @@ func validateInputs(info sessionInfo, channelID snowflake.Snowflake, args []stri
 	}
 
 	if serverType != "vanilla" && serverType != "forge1" {
-		fmt.Println(serverType)
 		result = result && false
 		showError(info, channelID, "Invalid server type")
 	}
