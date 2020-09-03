@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/andersfylling/disgord"
+	"yey007.github.io/software/pingmc/discord/events"
 )
 
 //Init inititalizes the bot
@@ -21,7 +22,7 @@ func Init(token string) {
 
 	defer client.StayConnectedUntilInterrupted(context.Background())
 
-	client.On(disgord.EvtMessageCreate, onMessageCreate)
+	client.On(disgord.EvtMessageCreate, events.OnMessageCreate)
 
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
 }

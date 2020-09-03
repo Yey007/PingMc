@@ -1,0 +1,34 @@
+{
+    "ping": {
+        "cmd": "ping <ip> <serverType>",
+        "desc": "Starts pinging a server.",
+        "args": [
+            {
+                "arg": "ip",
+                "desc": "The IP and port to ping."
+            },
+            {
+                "arg": "serverType",
+                "desc": "The type of server to ping (forge1/vanilla)"
+            }
+        ]
+    },
+
+    "commands": {
+        "cmd": "commands",
+        "desc": "Displays a list of all commands",
+        "args": [
+        ]
+    },
+
+    "help": {
+        "cmd": "help <command>",
+        "desc": "Displays help about a command",
+        "args": [
+            {
+                "arg": "command",
+                "desc": "The command to get help about"
+            }
+        ]
+    }
+}
