@@ -15,3 +15,4 @@ Note: The bot must have access to the channel you designate.
 3. Add FML2 support (Forge 1.13+)
 4. Add a way to look up modlists
 5. Add a way to look up if someone is online (possibly vanilla only, forge doesn't seem to have this feature)
+6. Server type inferrence
