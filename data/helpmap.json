@@ -30,5 +30,12 @@
                 "desc": "The command to get help about"
             }
         ]
+    },
+
+    "cancelping": {
+        "cmd": "cancelping",
+        "desc": "Cancels the ping running in the current channel",
+        "args": [
+        ]
     }
 }

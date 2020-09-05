@@ -11,8 +11,10 @@ import (
 )
 
 var commandMap = map[string]func(utils.SessionInfo, *disgord.Message, []string){
-	"ping": updater.OnPingRequest,
-	"help": help.OnHelpRequest,
+	"ping":       updater.OnPingRequest,
+	"cancelping": updater.OnPingCancelRequest,
+	"help":       help.OnHelpRequest,
+	"commands":   help.OnCommandsRequest,
 }
 
 //OnMessageCreate handles a message send event from discord
@@ -24,7 +26,6 @@ func OnMessageCreate(session disgord.Session, evt *disgord.MessageCreate) {
 	info := utils.SessionInfo{Con: con, Session: session}
 
 	if len(args) >= 2 && args[0] == ".pingmc" {
-
 		if command, ok := commandMap[args[1]]; ok {
 			go command(info, msg, args)
 		} else {

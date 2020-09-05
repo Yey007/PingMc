@@ -1,47 +1,32 @@
 package help
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"sync"
-
 	"github.com/andersfylling/disgord"
 	"yey007.github.io/software/pingmc/discord/utils"
+	"yey007.github.io/software/pingmc/discord/utils/colors"
 )
-
-var helpmap map[string]command
-var doOnce sync.Once
 
 //OnHelpRequest gives help about a command
 func OnHelpRequest(info utils.SessionInfo, msg *disgord.Message, args []string) {
 
 	if len(args) == 3 {
 
-		doOnce.Do(func() {
-			helpdata, err := ioutil.ReadFile("data/helpmap.json")
-			if err != nil {
-				utils.ShowError(info, msg.ChannelID, "Something went wrong reading helpmap.json. Please report this to the author (Yey007#3321).")
-				return
-			}
-
-			err = json.Unmarshal(helpdata, &helpmap)
-			if err != nil {
-				utils.ShowError(info, msg.ChannelID, "Something went wrong reading helpmap.json. Please report this to the author (Yey007#3321).")
-				return
-			}
-		})
+		helpmap, err := readJSON()
+		if err != nil {
+			utils.ShowError(info, msg.ChannelID, "Error reading helpmap.json. Please report this to the author, Yey007#3321")
+		}
 
 		cmd, ok := helpmap[args[2]]
 
 		if ok {
 
 			//build and format help string
-			help := "**" + cmd.Cmd + "** - " + cmd.Desc + "\n\n"
+			help := utils.Bold(utils.Block(cmd.Cmd)) + " - " + cmd.Desc + "\n\n"
 			for _, a := range cmd.Args {
-				help += a.Arg + " - *" + a.Desc + "*\n"
+				help += a.Arg + " - " + utils.Italics(a.Desc) + "\n"
 			}
 
-			info.Session.SendMsg(info.Con, msg.ChannelID, disgord.Embed{Title: "Help", Color: 0x1a5fba,
+			info.Session.SendMsg(info.Con, msg.ChannelID, disgord.Embed{Title: "Help", Color: colors.Blue,
 				Description: help})
 		} else {
 			utils.ShowError(info, msg.ChannelID, "Command not found")
