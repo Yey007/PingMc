@@ -10,9 +10,8 @@ You may build the bot and run it with your bot token using this command: `./ping
 Note: The bot must have access to the channel you designate.
 
 # Upcoming features and changes
-1. Fix the help message. Currently it still shows the old way of creating pinging channels where the bot creates a new channel.
-2. Add a way to stop the bot other than deleting the ping channel (by IP? Cancellation tokens?)
-3. Add FML2 support (Forge 1.13+)
-4. Add a way to look up modlists
-5. Add a way to look up if someone is online (possibly vanilla only, forge doesn't seem to have this feature)
-6. Server type inferrence
+1. Add a way to stop the bot other than deleting the ping channel (by IP? Cancellation tokens?)
+2. Add FML2 support (Forge 1.13+)
+3. Add a way to look up modlists
+4. Add a way to look up if someone is online (possibly vanilla only, forge doesn't seem to have this feature)
+5. Server type inferrence
