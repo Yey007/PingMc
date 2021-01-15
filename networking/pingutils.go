@@ -19,7 +19,7 @@ func ReadVarInt(conn net.Conn) (int, error) {
 		readCount, err := conn.Read(readBuf)
 		if err == nil && readCount == 1 {
 			var value int = int(readBuf[0] & 0b01111111)
-			result |= (value << (7 * numRead))
+			result |= value << (7 * numRead)
 			numRead++
 
 			if numRead > 5 {
@@ -91,8 +91,8 @@ func WriteShort(short uint16, data []byte) []byte {
 	return data
 }
 
-//SendRequest sends an Server List Ping request packet to a server
-func SendRequest(conn net.Conn) error {
+//sendRequest sends an Server List Ping request packet to a server
+func sendRequest(conn net.Conn) error {
 	data := make([]byte, 0)
 	packetID := 0x00
 	data = WriteVarInt(packetID, data)

@@ -1,37 +1,66 @@
 package help
 
 import (
+	"context"
+
+	"yey007.github.io/software/pingmc/discord/commands"
+	"yey007.github.io/software/pingmc/discord/handler"
+
 	"github.com/andersfylling/disgord"
 	"yey007.github.io/software/pingmc/discord/utils"
-	"yey007.github.io/software/pingmc/discord/utils/colors"
 )
 
-//OnHelpRequest gives help about a command
-func OnHelpRequest(info utils.SessionInfo, msg *disgord.Message, args []string) {
+type helpCommand struct {
+	name       string
+	commandMap handler.CommandMap
+	help       commands.CommandHelp
+}
 
-	if len(args) == 3 {
+//New returns a new commands.Command object that uses the given handler.CommandMap
+func New(commandMap handler.CommandMap) commands.Command {
+	command := helpCommand{
+		name:       "help",
+		commandMap: commandMap,
+		help: commands.CommandHelp{
+			Description: "Gives help about a command",
+			Arguments: []commands.CommandArgument{
+				{
+					Name:        "command",
+					Description: "the command to provide help about",
+				},
+			},
+		},
+	}
+	command.help.Usage = commands.BuildUsage(command.name, command.help.Arguments)
+	return command
+}
 
-		helpmap, err := readJSON()
-		if err != nil {
-			utils.ShowError(info, msg.ChannelID, "Error reading helpmap.json. Please report this to the author, Yey007#3321")
-		}
+func (h helpCommand) Name() string {
+	return h.name
+}
 
-		cmd, ok := helpmap[args[2]]
+func (h helpCommand) Help() commands.CommandHelp {
+	return h.help
+}
 
-		if ok {
+//Run gives help about a helpCommand
+func (h helpCommand) Run(ctx context.Context, msg *disgord.Message, args []string) disgord.Embed {
+	cmd, ok := h.commandMap[args[0]]
 
-			//build and format help string
-			help := utils.Bold(utils.Block(cmd.Cmd)) + " - " + cmd.Desc + "\n\n"
-			for _, a := range cmd.Args {
-				help += a.Arg + " - " + utils.Italics(a.Desc) + "\n"
-			}
+	if !ok {
+		return utils.CreateError("Command not found")
+	}
 
-			info.Session.SendMsg(info.Con, msg.ChannelID, disgord.Embed{Title: "Help", Color: colors.Blue,
-				Description: help})
-		} else {
-			utils.ShowError(info, msg.ChannelID, "Command not found")
-		}
-	} else {
-		utils.ShowError(info, msg.ChannelID, "Wrong number of arguments")
+	cmdHelp := cmd.Help()
+
+	help := utils.Bold(utils.Block(cmdHelp.Usage)) + " - " + cmdHelp.Description + "\n\n"
+	for _, a := range cmdHelp.Arguments {
+		help += a.Name + " - " + a.Description + "\n"
+	}
+
+	return disgord.Embed{
+		Title:       "Help",
+		Color:       utils.BLUE,
+		Description: help,
 	}
 }

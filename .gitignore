@@ -1,3 +1,3 @@
-pingmc.exe 
-pingmc
-crosscompile.ps1
+*.exe
+*.env
+*.db

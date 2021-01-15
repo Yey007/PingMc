@@ -4,25 +4,55 @@ import (
 	"context"
 	"fmt"
 
+	"yey007.github.io/software/pingmc/data"
+
+	"yey007.github.io/software/pingmc/discord/utils"
+
+	"yey007.github.io/software/pingmc/discord/commands/ping"
+
+	"yey007.github.io/software/pingmc/discord/commands/allhelp"
+	"yey007.github.io/software/pingmc/discord/commands/help"
+	"yey007.github.io/software/pingmc/discord/handler"
+
+	"yey007.github.io/software/pingmc/discord/notifier"
+
 	"github.com/andersfylling/disgord"
-	"yey007.github.io/software/pingmc/discord/events"
+	"github.com/andersfylling/disgord/std"
 )
 
-//Init inititalizes the bot
-func Init(token string) {
+//Start initializes the bot
+func Start(token string) {
 	client := disgord.New(disgord.Config{
 		BotToken: token,
 	})
 
-	if client == nil {
-		fmt.Println("Unable to create bot with the given token.")
-		return
+	fmt.Println("PingMC v0.2 running", client)
+
+	h := handler.New()
+	r, err := data.NewPingRepo()
+	if err != nil {
+		panic(err)
 	}
-	fmt.Println("PingMC v0.1 running", client)
+
+	h.Handle(help.New(h.Commands()))
+	h.Handle(allhelp.New(h.Commands()))
+	h.Handle(ping.New(r))
+
+	filter, _ := std.NewMsgFilter(context.Background(), client)
+	filter.SetPrefix(utils.PREFIX + " ")
+
+	client.On(disgord.EvtMessageCreate,
+		filter.NotByBot,
+		filter.HasPrefix,
+		std.CopyMsgEvt,
+		filter.StripPrefix,
+		h.HandleEventAsync)
+
+	client.On(disgord.EvtReady, func(session disgord.Session, event *disgord.Ready) {
+		notifier.StartNotifier(event.Ctx, session, r)
+	})
 
 	defer client.StayConnectedUntilInterrupted(context.Background())
-
-	client.On(disgord.EvtMessageCreate, events.OnMessageCreate)
 
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
 }
