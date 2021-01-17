@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"yey007.github.io/software/pingmc/discord/commands/pinglist"
+
+	"yey007.github.io/software/pingmc/discord/commands/cancelping"
+
 	"yey007.github.io/software/pingmc/data"
 
 	"yey007.github.io/software/pingmc/discord/utils"
@@ -37,6 +41,8 @@ func Start(token string) {
 	h.Handle(help.New(h.Commands()))
 	h.Handle(allhelp.New(h.Commands()))
 	h.Handle(ping.New(r))
+	h.Handle(cancelping.New(r))
+	h.Handle(pinglist.New(r))
 
 	filter, _ := std.NewMsgFilter(context.Background(), client)
 	filter.SetPrefix(utils.PREFIX + " ")

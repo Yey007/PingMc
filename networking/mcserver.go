@@ -19,7 +19,6 @@ var (
 //McServer represents a remote minecraft server which can be pinged
 type McServer struct {
 	gorm.Model
-	Name            string
 	Address         string
 	Type            uint8
 	RecurringPingID uint

@@ -24,7 +24,6 @@ type pingCommand struct {
 	repo *data.PingRepo
 }
 
-//TODO: Storage object
 //New returns a new commands.Command object that has access to the given storage
 func New(repo *data.PingRepo) commands.Command {
 	command := pingCommand{
@@ -100,15 +99,21 @@ func (p pingCommand) Run(ctx context.Context, msg *disgord.Message, args []strin
 	}
 
 	ping := data.RecurringPing{
+		Name:      args[0],
+		GuildID:   msg.GuildID.String(),
 		ChannelID: msg.ChannelID.String(),
 		Server: networking.McServer{
-			Name:    args[0],
 			Address: trueAddress,
 			Type:    serverType,
 		},
 	}
 
-	err := p.repo.Create(ctx, ping)
+	_, err := p.repo.GetByNameGuildID(ctx, ping.Name, ping.GuildID)
+	if err == nil {
+		return utils.CreateError("A ping with that name already exists for this server!")
+	}
+
+	err = p.repo.Create(ctx, ping)
 	if err != nil {
 		return utils.CreateError("Failed to create ping! Something seems to have gone wrong with our database.")
 	}

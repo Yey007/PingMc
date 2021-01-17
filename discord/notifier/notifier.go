@@ -62,13 +62,13 @@ func createNotification(
 			//Server was online and is still online
 			if pingdata.Players.Online > temp.PreviousData.Players.Online {
 				//Number of players more
-				return createPlayerJoin(*pingdata, p.Server.Name)
+				return createPlayerJoin(*pingdata, p.Name)
 			} else if pingdata.Players.Online < temp.PreviousData.Players.Online {
 				//Number of players less
-				return createPlayerLeave(*pingdata, p.Server.Name)
+				return createPlayerLeave(*pingdata, p.Name)
 			} else if pingdata.Players.Max != temp.PreviousData.Players.Max {
 				//Max players different
-				return createServerOnline(*pingdata, p.Server.Name)
+				return createServerOnline(*pingdata, p.Name)
 			}
 		} else {
 			//Server was online and is now offline
@@ -77,7 +77,7 @@ func createNotification(
 				PreviousData:    nil,
 				HasPrevious:     false,
 			})
-			return createServerOffline(p.Server.Name)
+			return createServerOffline(p.Name)
 		}
 	} else {
 		if err == nil {
@@ -87,7 +87,7 @@ func createNotification(
 				PreviousData:    pingdata,
 				HasPrevious:     true,
 			})
-			return createServerOnline(*pingdata, p.Server.Name)
+			return createServerOnline(*pingdata, p.Name)
 		}
 		//Server was offline and is still offline, do nothing
 	}
