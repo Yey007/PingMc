@@ -5,7 +5,7 @@ A discord bot that pings minecraft servers for player counts written in Go
 
 You may build the bot and run it with your bot token using this command: `./pingmc -t key`
 
-~Or you can use the centralized hosting. Add the bot to your server using this link: https://discord.com/api/oauth2/authorize?client_id=734445179800649739&permissions=3072&scope=bot
+Or you can use the centralized hosting. Add the bot to your server using this link: https://discord.com/api/oauth2/authorize?client_id=734445179800649739&permissions=3072&scope=bot
 
 Note: The bot must have access to the channel you designate.
 
