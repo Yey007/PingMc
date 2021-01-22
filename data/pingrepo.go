@@ -2,13 +2,12 @@ package data
 
 import (
 	"context"
+	"fmt"
+	"gorm.io/driver/postgres"
 	"sync"
 
-	"gorm.io/driver/sqlite"
 	"yey007.github.io/software/pingmc/networking"
 
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
 
@@ -18,25 +17,19 @@ type PingRepo struct {
 	tempStoreLock sync.RWMutex
 }
 
-type RecurringPing struct {
-	gorm.Model
-	Name      string
-	GuildID   string
-	ChannelID string
-	Server    networking.McServer `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-}
-
-type TempPingData struct {
-	RecurringPingID uint
-	PreviousData    *networking.PingData
-	HasPrevious     bool
-}
-
-func NewPingRepo() (*PingRepo, error) {
+func NewPingRepo(config Config) (*PingRepo, error) {
 	var repo PingRepo
 	var err error
 
-	repo.db, err = gorm.Open(sqlite.Open("data/database.db"), &gorm.Config{})
+	dsn := fmt.Sprintf(
+		"host=%v user=%v password=%v dbname=%v port=%v sslmode=disable",
+		config.Host,
+		config.User,
+		config.Password,
+		config.DBName,
+		config.Port,
+	)
+	repo.db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}

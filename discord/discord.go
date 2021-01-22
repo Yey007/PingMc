@@ -25,7 +25,7 @@ import (
 )
 
 //Start initializes the bot
-func Start(token string) {
+func Start(token string, r *data.PingRepo) {
 	client := disgord.New(disgord.Config{
 		BotToken: token,
 	})
@@ -33,10 +33,6 @@ func Start(token string) {
 	fmt.Println("PingMC v0.2 running", client)
 
 	h := handler.New()
-	r, err := data.NewPingRepo()
-	if err != nil {
-		panic(err)
-	}
 
 	h.Handle(help.New(h.Commands()))
 	h.Handle(allhelp.New(h.Commands()))

@@ -1,0 +1,7 @@
+.dockerignore
+.gitignore
+Dockerfile
+go.sum
+LISENCE
+README.md
+.env

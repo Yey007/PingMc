@@ -1,18 +1,33 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"yey007.github.io/software/pingmc/data"
 
-	"github.com/joho/godotenv"
 	"yey007.github.io/software/pingmc/discord"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if os.Getenv("CONTAINER") != "TRUE" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Error loading bot.env file")
+		}
 	}
 
-	discord.Start(os.Getenv("TOKEN"))
+	r, err := data.NewPingRepo(data.Config{
+		Host:     "db",
+		User:     os.Getenv("POSTGRES_USER"),
+		Password: os.Getenv("POSTGRES_PASSWORD"),
+		DBName:   os.Getenv("POSTGRES_DATABASE"),
+		Port:     5432,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	discord.Start(os.Getenv("TOKEN"), r)
 }
