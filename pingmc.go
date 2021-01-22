@@ -11,18 +11,18 @@ import (
 
 func main() {
 	if os.Getenv("CONTAINER") != "TRUE" {
-		err := godotenv.Load()
+		err := godotenv.Load("bot.env", "db.env")
 		if err != nil {
-			log.Fatal("Error loading bot.env file")
+			log.Fatal("Error loading env files")
 		}
 	}
 
 	r, err := data.NewPingRepo(data.Config{
-		Host:     "db",
+		Host:     os.Getenv("DB_HOST"),
 		User:     os.Getenv("POSTGRES_USER"),
 		Password: os.Getenv("POSTGRES_PASSWORD"),
 		DBName:   os.Getenv("POSTGRES_DATABASE"),
-		Port:     5432,
+		Port:     os.Getenv("DB_PORT"),
 	})
 
 	if err != nil {
