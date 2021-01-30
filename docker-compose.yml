@@ -5,6 +5,7 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
+    image: ghcr.io/yey007/pingmc:latest
     env_file:
       - bot.env
       - db.env
