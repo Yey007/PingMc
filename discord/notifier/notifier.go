@@ -11,13 +11,16 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
+const fastPingInterval = 5
+const slowPingInterval = 40
+
 func StartNotifier(ctx context.Context, session disgord.Session, repo *data.PingRepo) {
 	go notifyQuickly(ctx, session, repo)
 	go notifySlowly(ctx, session, repo)
 }
 
 func notifyQuickly(ctx context.Context, session disgord.Session, repo *data.PingRepo) {
-	for range time.Tick(5 * time.Second) {
+	for range time.Tick(fastPingInterval * time.Second) {
 		repo.GetAllInBatches(ctx, func(ping data.RecurringPing, tempData data.TempPingData) {
 			//Only ping if there was previous data (was online)
 			if tempData.HasPrevious {
@@ -31,7 +34,7 @@ func notifyQuickly(ctx context.Context, session disgord.Session, repo *data.Ping
 }
 
 func notifySlowly(ctx context.Context, session disgord.Session, repo *data.PingRepo) {
-	for range time.Tick(10 * time.Second) {
+	for range time.Tick(slowPingInterval * time.Second) {
 		repo.GetAllInBatches(ctx, func(ping data.RecurringPing, tempData data.TempPingData) {
 			//Only ping if there wasn't previous data (was offline)
 			if !tempData.HasPrevious {
