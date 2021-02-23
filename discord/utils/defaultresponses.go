@@ -14,8 +14,8 @@ func CreateError(message string) disgord.Embed {
 		Description: fmt.Sprintf(
 			"%v \n\n %v for help\n %v for command list",
 			message,
-			Bold(Block(".pingmc help <command>")),
-			Bold(Block(".pingmc commands")),
+			Block(".pingmc help <command>"),
+			Block(".pingmc commands"),
 		),
 	}
 }

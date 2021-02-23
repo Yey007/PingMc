@@ -24,21 +24,21 @@ type McServer struct {
 	RecurringPingID uint
 }
 
-func (m *McServer) Ping() (*PingData, error) {
+func (m *McServer) Ping() (PingData, error) {
 	conn, err := net.Dial("tcp", m.Address)
 	if err != nil {
-		return nil, err
+		return PingData{}, err
 	}
 	if m.Type == ServerTypeForge {
 		return pingForge(conn)
 	} else if m.Type == ServerTypeVanilla {
 		return pingVanilla(conn)
 	} else {
-		return nil, ErrUnknownServerType
+		return PingData{}, ErrUnknownServerType
 	}
 }
 
-func pingForge(conn net.Conn) (*PingData, error) {
+func pingForge(conn net.Conn) (PingData, error) {
 	defer conn.Close()
 	err := forgeSendHandshake(conn)
 	err = sendRequest(conn)
@@ -46,7 +46,7 @@ func pingForge(conn net.Conn) (*PingData, error) {
 	return response, err
 }
 
-func pingVanilla(conn net.Conn) (*PingData, error) {
+func pingVanilla(conn net.Conn) (PingData, error) {
 	defer conn.Close()
 	err := vanillaSendHandshake(conn)
 	err = sendRequest(conn)

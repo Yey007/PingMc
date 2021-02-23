@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/andersfylling/snowflake/v4"
@@ -12,7 +13,7 @@ import (
 )
 
 const fastPingInterval = 5
-const slowPingInterval = 40
+const slowPingInterval = 10
 
 func StartNotifier(ctx context.Context, session disgord.Session, repo *data.PingRepo) {
 	go notifyQuickly(ctx, session, repo)
@@ -21,78 +22,46 @@ func StartNotifier(ctx context.Context, session disgord.Session, repo *data.Ping
 
 func notifyQuickly(ctx context.Context, session disgord.Session, repo *data.PingRepo) {
 	for range time.Tick(fastPingInterval * time.Second) {
-		repo.GetAllInBatches(ctx, func(ping data.RecurringPing, tempData data.TempPingData) {
-			//Only ping if there was previous data (was online)
-			if tempData.HasPrevious {
-				embed := createNotification(ping, tempData, repo)
-				if embed != nil {
-					session.SendMsg(ctx, snowflake.ParseSnowflakeString(ping.ChannelID), *embed)
+		ch := make(chan data.PingPair)
+		go repo.GetAll(ctx, ch)
+
+		wg := sync.WaitGroup{}
+		for pair := range ch {
+			wg.Add(1)
+			go func(pair data.PingPair) {
+				//Only ping if there was previous data (was online)
+				defer wg.Done()
+				if pair.Temp.HasPrevious {
+					embed, shouldSend := createNotification(pair.Ping, pair.Temp, repo)
+					if shouldSend {
+						_, _ = session.SendMsg(ctx, snowflake.ParseSnowflakeString(pair.Ping.ChannelID), embed)
+					}
 				}
-			}
-		})
+			}(pair)
+		}
+		wg.Wait()
 	}
 }
 
 func notifySlowly(ctx context.Context, session disgord.Session, repo *data.PingRepo) {
 	for range time.Tick(slowPingInterval * time.Second) {
-		repo.GetAllInBatches(ctx, func(ping data.RecurringPing, tempData data.TempPingData) {
-			//Only ping if there wasn't previous data (was offline)
-			if !tempData.HasPrevious {
-				embed := createNotification(ping, tempData, repo)
-				if embed != nil {
-					session.SendMsg(ctx, snowflake.ParseSnowflakeString(ping.ChannelID), *embed)
+		ch := make(chan data.PingPair)
+		go repo.GetAll(ctx, ch)
+
+		wg := sync.WaitGroup{}
+		for pair := range ch {
+			wg.Add(1)
+			go func(pair data.PingPair) {
+				//Only ping if there wasn't previous data (was offline)
+				defer wg.Done()
+				if !pair.Temp.HasPrevious {
+					embed, shouldSend := createNotification(pair.Ping, pair.Temp, repo)
+					if shouldSend {
+						_, _ = session.SendMsg(ctx, snowflake.ParseSnowflakeString(pair.Ping.ChannelID), embed)
+					}
 				}
-			}
-		})
-	}
-}
-
-func createNotification(
-	p data.RecurringPing,
-	temp data.TempPingData,
-	repo *data.PingRepo,
-) *disgord.Embed {
-	//TODO: How many times does a ping have to fail for us to just stop pinging it?
-	pingdata, err := p.Server.Ping()
-
-	if temp.HasPrevious {
-		if err == nil {
-			defer repo.CreateTemp(data.TempPingData{
-				RecurringPingID: p.ID,
-				PreviousData:    pingdata,
-				HasPrevious:     true,
-			})
-			//Server was online and is still online
-			if pingdata.Players.Online > temp.PreviousData.Players.Online {
-				//Number of players more
-				return createPlayerJoin(*pingdata, p.Name)
-			} else if pingdata.Players.Online < temp.PreviousData.Players.Online {
-				//Number of players less
-				return createPlayerLeave(*pingdata, p.Name)
-			} else if pingdata.Players.Max != temp.PreviousData.Players.Max {
-				//Max players different
-				return createServerOnline(*pingdata, p.Name)
-			}
-		} else {
-			//Server was online and is now offline
-			defer repo.CreateTemp(data.TempPingData{
-				RecurringPingID: p.ID,
-				PreviousData:    nil,
-				HasPrevious:     false,
-			})
-			return createServerOffline(p.Name)
+			}(pair)
 		}
-	} else {
-		if err == nil {
-			//Server was offline and is now online
-			defer repo.CreateTemp(data.TempPingData{
-				RecurringPingID: p.ID,
-				PreviousData:    pingdata,
-				HasPrevious:     true,
-			})
-			return createServerOnline(*pingdata, p.Name)
-		}
-		//Server was offline and is still offline, do nothing
+		wg.Wait()
 	}
-	return nil
 }

@@ -15,6 +15,6 @@ type RecurringPing struct {
 
 type TempPingData struct {
 	RecurringPingID uint
-	PreviousData    *networking.PingData
+	PreviousData    networking.PingData
 	HasPrevious     bool
 }

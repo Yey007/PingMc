@@ -10,12 +10,12 @@ import (
 )
 
 //forgeReceiveResponse receives a response from a forge server
-func forgeReceiveResponse(conn net.Conn) (*PingData, error) {
+func forgeReceiveResponse(conn net.Conn) (PingData, error) {
 	ReadVarInt(conn)
 	ReadVarInt(conn)
 	length, err := ReadVarInt(conn)
 	if err != nil {
-		return nil, err
+		return PingData{}, err
 	}
 
 	readBuf := make([]byte, length)
@@ -36,13 +36,13 @@ func forgeReceiveResponse(conn net.Conn) (*PingData, error) {
 	var data PingData
 	err = json.Unmarshal(readBuf, &data)
 	if err != nil {
-		return nil, err
+		return PingData{}, err
 	}
 
 	if readCount == length {
-		return &data, err
+		return data, err
 	}
-	return nil, errors.New("something went wrong")
+	return PingData{}, errors.New("something went wrong")
 }
 
 //forgeSendHandshake sends a forge handshake packet to a forge server

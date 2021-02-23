@@ -17,6 +17,11 @@ type PingRepo struct {
 	tempStoreLock sync.RWMutex
 }
 
+type PingPair struct {
+	Ping RecurringPing
+	Temp TempPingData
+}
+
 func NewPingRepo(config Config) (*PingRepo, error) {
 	var repo PingRepo
 	var err error
@@ -59,26 +64,36 @@ func (p *PingRepo) CreateTemp(tempData TempPingData) {
 	p.tempStoreLock.Unlock()
 }
 
-func (p *PingRepo) GetAllInBatches(
-	ctx context.Context,
-	callback func(ping RecurringPing, tempData TempPingData),
-) error {
-	var pings []RecurringPing
-	return p.db.WithContext(ctx).Preload("Server").FindInBatches(&pings, 100, func(tx *gorm.DB, batch int) error {
-		for _, ping := range pings {
-			p.tempStoreLock.RLock()
-			tempData := p.tempStore[ping.ID]
-			p.tempStoreLock.RUnlock()
-			callback(ping, tempData)
+func (p *PingRepo) GetAll(ctx context.Context, ch chan PingPair) error {
+	defer close(ch)
+	rows, err := p.db.WithContext(ctx).Joins("Server").Model(&RecurringPing{}).Rows()
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var ping RecurringPing
+		err = p.db.ScanRows(rows, &ping)
+		if err != nil {
+			return err
 		}
-		return nil
-	}).Error
+
+		p.tempStoreLock.RLock()
+		temp := p.tempStore[ping.ID]
+		p.tempStoreLock.RUnlock()
+
+		ch <- PingPair{
+			Ping: ping,
+			Temp: temp,
+		}
+	}
+	return nil
 }
 
-func (p *PingRepo) GetByNameGuildID(ctx context.Context, name string, guildID string) (*RecurringPing, error) {
+func (p *PingRepo) GetByNameGuildID(ctx context.Context, name string, guildID string) (RecurringPing, error) {
 	var ping RecurringPing
 	err := p.db.WithContext(ctx).Preload("Server").Where("name = ? AND guild_id = ?", name, guildID).Take(&ping).Error
-	return &ping, err
+	return ping, err
 }
 
 func (p *PingRepo) GetByGuildID(ctx context.Context, guildID string) ([]RecurringPing, error) {
