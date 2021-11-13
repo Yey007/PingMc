@@ -11,6 +11,6 @@ DISCORD_TOKEN=your_token
 2. Run `go build`
 3. Run the output
 
-Or you can use the centralized hosting. Add the bot to your server using this link: https://discord.com/api/oauth2/authorize?client_id=734445179800649739&permissions=3072&scope=bot
+Unfortunately, there is no longer public hosting for this bot. You may run your own instance with the isntructions above.
 
 Note: The bot must have access to the channel you designate.
